@@ -21,7 +21,7 @@ async function throttle_requests(url, max_per_second) {
     }
 
     if (requests_of_the_second[host] > max_per_second) {
-        console.log(`call to ${host} reached ${max_per_second} per second`);
+        console.log(`calls to ${host} reached ${max_per_second} per second`);
         await sleep(1000);
     }
 }

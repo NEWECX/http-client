@@ -1,5 +1,5 @@
 {
-  "name": "@samwen/http-client",
+  "name": "@ritani/http-client",
   "version": "1.0.0",
   "description": "http client supports throttle and multiple tries",
   "main": "src/index.js",

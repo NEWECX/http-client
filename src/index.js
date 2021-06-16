@@ -9,7 +9,7 @@ const sleep = require('./sleep');
 
 /**
  * 
- * @param {*} options axios options + local_filepath 
+ * @param {*} options axios options + local_filepath and throttle
  * @param {*} tries how many reties if 429 and >=500 response
  * @returns null or response 
  */
@@ -18,14 +18,22 @@ async function http_client(options, tries = 3) {
     options = {...options};
 
     if (!options.maxContentLength && !options.maxBodyLength) {
+
         options.maxContentLength = 16777216;  // 16M
         options.maxBodyLength = 16777216;
+    
     }
+
     if (!options.timeout) {
+
         options.timeout = 60000 // 1 minute
+
     }
+
     if (!options.httpsAgent) {
+
         options.httpsAgent = new https.Agent({rejectUnauthorized: false});
+
     }
 
     // prepare 
@@ -61,15 +69,22 @@ async function http_client(options, tries = 3) {
         if (!options.headers) {
             options.headers = {};
         }
+
         if (!options.headers.accept || !options.headers.Accept) {
             options.headers.accept = 'application/json';
         }
 
     }
 
-    // throttle to 30 calls per second max
+    // throttle per second max calls
     //
-    await throttle_requests(options.url, 30);
+    let throttle = 30;
+    if (options.throttle) {
+        throttle = options.throttle;
+        delete options.throttle;
+    }
+
+    await throttle_requests(options.url, throttle);
 
     // try multiple times
     //
@@ -116,13 +131,21 @@ async function http_client(options, tries = 3) {
             if (err.response) {
 
                 // retry util end of the loop for 429
-                if (err.response.status === 429) {  
+                //
+                if (err.response.status === 429) { 
+
                     await sleep(1000 * (i * i));
+
                 // retry 3 times for >= 500
+                //
                 } else if (err.response.status >= 500 && i <= 3) {
+
                     await sleep(1000 * (i * i));
+
                 } else {
+
                     return err.response;
+
                 }
 
             } else {
