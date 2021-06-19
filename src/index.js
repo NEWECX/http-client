@@ -134,12 +134,14 @@ async function http_client(options, tries = 3) {
                 //
                 if (err.response.status === 429) { 
 
+                    process.stdout.write('*');
                     await sleep(1000 * (i * i));
 
                 // retry 3 times for >= 500
                 //
                 } else if (err.response.status >= 500 && i <= 3) {
 
+                    process.stdout.write('#');
                     await sleep(1000 * (i * i));
 
                 } else {
