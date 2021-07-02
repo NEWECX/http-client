@@ -137,9 +137,9 @@ async function http_client(options, tries = 3) {
                     process.stdout.write('*');
                     await sleep(1000 * (i * i));
 
-                // retry 3 times for >= 500
+                // retry 3 times for 408 and >= 500
                 //
-                } else if (err.response.status >= 500 && i <= 3) {
+                } else if ((err.response.status === 408 || err.response.status >= 500) && i <= 3) {
 
                     process.stdout.write('#');
                     await sleep(1000 * (i * i));
