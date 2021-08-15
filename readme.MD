@@ -6,7 +6,7 @@ How to install
 
 How to use
 
-    const http_client = require('@ritani/http-client);
+    const http_client = require('@ritani/http-client');
     const node_path =  require('path');
 
     (async () => {
