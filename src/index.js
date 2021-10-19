@@ -19,14 +19,14 @@ async function http_client(options, tries = 3) {
 
     if (!options.maxContentLength && !options.maxBodyLength) {
 
-        options.maxContentLength = 16777216;  // 16M
-        options.maxBodyLength = 16777216;
+        options.maxContentLength = 16777216 * 2;  // 32M
+        options.maxBodyLength = 16777216 * 2;
     
     }
 
     if (!options.timeout) {
 
-        options.timeout = 60000 // 1 minute
+        options.timeout = 60000 * 3; // 3 minutes
 
     }
 
