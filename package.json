@@ -1,6 +1,6 @@
 {
   "name": "@ritani/http-client",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "http client supports throttle and multiple tries",
   "main": "src/index.js",
   "scripts": {

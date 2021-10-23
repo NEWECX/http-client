@@ -84,10 +84,13 @@ async function http_client(options, tries = 3) {
 
         if (options.data && ['post', 'put', 'patch'].includes(options.method)) {
 
+            if (typeof options.data === 'object' && !Buffer.isBuffer(options.data)) {
+                options.data = JSON.stringify(options.data);
+                options.headers['Content-Type'] = 'application/json';
+            }
             options.data = await gzip(options.data);
             options.headers['Content-Length'] = options.data.length;
-            options.headers['Content-Encoding'] = 'gzip';
-
+            options.headers['Content-Encoding'] = 'gzip';   
         }
 
         delete options.zip;
