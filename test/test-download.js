@@ -30,4 +30,18 @@ describe('Test download-file', () => {
         expect(fs.existsSync(local_filepath)).equals(true);
     });
 
+    it('test download-file without zip', async () => {
+        const local_filepath = node_path.join(os.tmpdir(), 'google.png');
+        if (fs.existsSync(local_filepath)) {
+            fs.unlinkSync(local_filepath);
+        }
+        const url = 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png';
+        const options = {method: 'get', url, local_filepath, zip: false};
+        const response = await http_client(options);
+        //console.log(response.headers);
+        expect(response).has.property('headers');
+        expect(response.status).equals(200);
+        expect(fs.existsSync(local_filepath)).equals(true);
+    });
+
 });

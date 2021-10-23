@@ -5,6 +5,7 @@ const axios = require('axios').default;
 const https = require('https');
 const throttle_requests = require('./throttle-requests');
 const write_to_stream = require('./write-to-stream');
+const zlib = require("zlib");
 const sleep = require('./sleep');
 
 /**
@@ -14,8 +15,6 @@ const sleep = require('./sleep');
  * @returns null or response 
  */
 async function http_client(options, tries = 3) {
-
-    options = {...options};
 
     if (!options.maxContentLength && !options.maxBodyLength) {
 
@@ -57,8 +56,7 @@ async function http_client(options, tries = 3) {
 
         } else if (method === 'post' && !options.data) {
 
-            const data = readFileSync(options.local_filepath);
-            options.data = data;
+            options.data = readFileSync(options.local_filepath);
 
         }
 
@@ -76,13 +74,31 @@ async function http_client(options, tries = 3) {
 
     }
 
+    // support gzip by default
+    //
+    if (!options.hasOwnProperty('zip') || options.zip === true) {
+
+        if (!options.headers) {
+            options.headers = {};
+        }
+
+        options.headers['Accept-Encoding'] = 'gzip';
+
+        if (options.data && ['post', 'put', 'patch'].includes(options.method)) {
+
+            options.data = await gzip(options.data);
+            options.headers['Content-Length'] = options.data.length;
+            options.headers['Content-Encoding'] = 'gzip';
+
+        }
+
+        delete options.zip;
+
+    }
+
     // throttle per second max calls
     //
-    let throttle = 30;
-    if (options.throttle) {
-        throttle = options.throttle;
-        delete options.throttle;
-    }
+    const throttle = options.throttle ? options.throttle : 30;
 
     await throttle_requests(options.url, throttle);
 
@@ -162,6 +178,19 @@ async function http_client(options, tries = 3) {
     console.log(`ERROR: http_client, failed request for ${options.url}`);
     
     return null;
+}
+
+function gzip(data) {
+    return new Promise(resolve => {
+        zlib.gzip(data, (err, buffer) => {
+            if (!err) {
+                resolve(buffer);
+            } else {
+                console.log(err);
+                resolve(null);
+            }
+        });
+    });
 }
 
 module.exports = http_client;
