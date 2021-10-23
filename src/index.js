@@ -74,9 +74,7 @@ async function http_client(options, tries = 3) {
 
     }
 
-    // support gzip by default
-    //
-    if (!options.hasOwnProperty('zip') || options.zip === true) {
+    if (options.zip) {
 
         if (!options.headers) {
             options.headers = {};
