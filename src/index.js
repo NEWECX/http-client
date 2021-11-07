@@ -1,6 +1,6 @@
 'use strict';
 
-const { readFileSync, createWriteStream } = require('fs');
+const fs = require('fs');
 const axios = require('axios').default;
 const https = require('https');
 const throttle_requests = require('./throttle-requests');
@@ -52,16 +52,16 @@ async function http_client(options, tries = 3) {
                 options.headers.accept = '*/*';
             }
             options.responseType = 'stream';
-            writer = createWriteStream(options.local_filepath);
+            writer = fs.createWriteStream(options.local_filepath);
 
-        } else if (method === 'post' && !options.data) {
+        } else if (!options.data && !['head', 'options', 'trace', 'connect'].includes(method)) {
 
-            options.data = readFileSync(options.local_filepath);
+            options.data = fs.readFileSync(options.local_filepath);
 
         }
 
         delete options.local_filepath;
-
+ 
     } else {
 
         if (!options.headers) {
