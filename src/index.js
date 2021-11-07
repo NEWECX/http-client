@@ -8,6 +8,8 @@ const write_to_stream = require('./write-to-stream');
 const zlib = require("zlib");
 const sleep = require('./sleep');
 
+const may_has_body_methods = ['post', 'put', 'delete', 'patch'];
+
 /**
  * 
  * @param {*} options axios options + local_filepath and throttle
@@ -16,35 +18,27 @@ const sleep = require('./sleep');
  */
 async function http_client(options, tries = 3) {
 
-    if (!options.maxContentLength && !options.maxBodyLength) {
+    const method = options.method ? options.method.toLowerCase() : 'get';
 
+    if (may_has_body_methods.includes(method) &&
+        !options.maxContentLength && !options.maxBodyLength) {
         options.maxContentLength = 16777216 * 2;  // 32M
         options.maxBodyLength = 16777216 * 2;
-    
     }
 
     if (!options.timeout) {
-
         options.timeout = 60000 * 3; // 3 minutes
-
     }
 
     if (!options.httpsAgent) {
-
         options.httpsAgent = new https.Agent({rejectUnauthorized: false});
-
     }
 
     // prepare 
     //
     let writer = null;
-
     if (options.local_filepath) {
-
-        const method = options.method ? options.method.toLowerCase() : 'get';
-
         if (method === 'get') {
-
             if (!options.headers) {
                 options.headers = {};
             }
@@ -53,37 +47,24 @@ async function http_client(options, tries = 3) {
             }
             options.responseType = 'stream';
             writer = fs.createWriteStream(options.local_filepath);
-
-        } else if (!options.data && !['head', 'options', 'trace', 'connect'].includes(method)) {
-
+        } else if (!options.data && may_has_body_methods.includes(method)) {
             options.data = fs.readFileSync(options.local_filepath);
-
         }
-
         delete options.local_filepath;
- 
     } else {
-
         if (!options.headers) {
             options.headers = {};
         }
-
         if (!options.headers.accept || !options.headers.Accept) {
             options.headers.accept = 'application/json';
         }
-
     }
-
     if (options.zip) {
-
         if (!options.headers) {
             options.headers = {};
         }
-
         options.headers['Accept-Encoding'] = 'gzip';
-
-        if (options.data && ['post', 'put', 'patch'].includes(options.method)) {
-
+        if (options.data && may_has_body_methods.includes(method)) {
             if (typeof options.data === 'object' && !Buffer.isBuffer(options.data)) {
                 options.data = JSON.stringify(options.data);
                 options.headers['Content-Type'] = 'application/json';
@@ -92,92 +73,57 @@ async function http_client(options, tries = 3) {
             options.headers['Content-Length'] = options.data.length;
             options.headers['Content-Encoding'] = 'gzip';   
         }
-
         delete options.zip;
-
     }
 
     // throttle per second max calls
     //
     const throttle = options.throttle ? options.throttle : 30;
-
     await throttle_requests(options.url, throttle);
 
     // try multiple times
     //
     for (let i = 1; i <= tries; i++) {
-
          try {
-
             const response = await axios(options);
-
             if (response) {
-
                 // write to stream to download file
-                //
                 if (writer) {
-
                     if (response.data) {
-
                         response.data.pipe(writer);
                         await write_to_stream(writer, options.url);
                         delete response.data;
-
                     } else {
-
-                        console.log('ERROR: http_client get empty stream for ' + options.url);
-
+                        console.error('http_client get empty stream for ' + options.url);
                     }
-
                     return response
-
                 } else {
-
                     return response;
-
                 }
             } else {
-
-                console.log('ERROR: http_client get empty response for ' + options.url);
+                console.error('http_client get empty response for ' + options.url);
                 return null;
-
             }
-
         } catch(err) {
-
             if (err.response) {
-
                 // retry util end of the loop for 429
-                //
                 if (err.response.status === 429) { 
-
                     process.stdout.write('*');
                     await sleep(1000 * (i * i));
-
                 // retry 3 times for 408 and >= 500
-                //
                 } else if ((err.response.status === 408 || err.response.status >= 500) && i <= 3) {
-
                     process.stdout.write('#');
                     await sleep(1000 * (i * i));
-
                 } else {
-
                     return err.response;
-
                 }
-
             } else {
-
-                console.log(`ERROR: http_client caught ${err.message} for ${options.url}`);
+                console.error(`http_client caught ${err.message} for ${options.url}`);
                 break;
-
             }
         }
     }
-
-    console.log(`ERROR: http_client, failed request for ${options.url}`);
-    
+    console.error(`http_client, failed request for ${options.url}`);
     return null;
 }
 
