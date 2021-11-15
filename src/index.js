@@ -36,7 +36,7 @@ async function http_client(options, tries = 3) {
 
     // prepare 
     //
-    let writer = null;
+    let get_local_filepath;
     if (options.local_filepath) {
         if (method === 'get') {
             if (!options.headers) {
@@ -46,7 +46,7 @@ async function http_client(options, tries = 3) {
                 options.headers.accept = '*/*';
             }
             options.responseType = 'stream';
-            writer = fs.createWriteStream(options.local_filepath);
+            get_local_filepath = options.local_filepath;
         } else if (!options.data && may_has_body_methods.includes(method)) {
             options.data = fs.readFileSync(options.local_filepath);
         }
@@ -88,8 +88,9 @@ async function http_client(options, tries = 3) {
             const response = await axios(options);
             if (response) {
                 // write to stream to download file
-                if (writer) {
+                if (get_local_filepath) {
                     if (response.data) {
+                        const writer = fs.createWriteStream(get_local_filepath);
                         response.data.pipe(writer);
                         await write_to_stream(writer, options.url);
                         delete response.data;
