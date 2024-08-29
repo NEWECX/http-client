@@ -2,17 +2,10 @@
 
 const os = require('os');
 const fs = require('fs');
-const chai = require('chai');
 const node_path = require('path');
 const http_client = require('../src')
 
-
-const expect = chai.expect;
-
-// to run all tests start with test-
-// npm test
-// OR
-// stage_env=test mocha  --timeout 3000 --reporter spec test/test-download-file
+// jest test/download.test.js 
 
 describe('Test download-file', () => {
 
@@ -25,9 +18,8 @@ describe('Test download-file', () => {
         const options = {method: 'get', url, local_filepath};
         const response = await http_client(options);
         //console.log(response.headers);
-        expect(response).has.property('headers');
-        expect(response.status).equals(200);
-        expect(fs.existsSync(local_filepath)).equals(true);
+        expect(response.status).toBe(200);
+        expect(fs.existsSync(local_filepath)).toBe(true);
     });
 
     it('test download-file without zip', async () => {
@@ -38,10 +30,8 @@ describe('Test download-file', () => {
         const url = 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png';
         const options = {method: 'get', url, local_filepath, zip: false};
         const response = await http_client(options);
-        //console.log(response.headers);
-        expect(response).has.property('headers');
-        expect(response.status).equals(200);
-        expect(fs.existsSync(local_filepath)).equals(true);
+        expect(response.status).toBe(200);
+        expect(fs.existsSync(local_filepath)).toBe(true);
     });
 
 });
